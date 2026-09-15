@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "Please cite the PACT manuscript; publication metadata is pending author review."
+title: "PACT: Array-Agnostic Multichannel-to-Multichannel Target Speech Extraction"
+type: software
+version: 0.1.0
+authors:
+  - family-names: Wen
+    given-names: Wen
+  - family-names: Chen
+    given-names: Changda
+  - family-names: Xi
+    given-names: Yu
+  - family-names: Li
+    given-names: Haoyu
+  - family-names: Li
+    given-names: Bohan
+  - family-names: Zhou
+    given-names: Qiang
+  - family-names: Wang
+    given-names: Shuai
+  - family-names: Chen
+    given-names: Guanyu
+  - family-names: Gu
+    given-names: Xiaoyu
+  - family-names: Yu
+    given-names: Kai

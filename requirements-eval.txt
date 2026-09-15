@@ -1,0 +1,3 @@
+-r requirements.txt
+pesq==0.0.4
+pystoi==0.4.1

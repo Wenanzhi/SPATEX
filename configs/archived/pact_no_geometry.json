@@ -1,0 +1,291 @@
+{
+  "model": "src.training.network_TACDeFTAN2",
+  "model_params": {
+    "max_n_mics": 8,
+    "n_srcs": 8,
+    "win": 256,
+    "n_layers": 6,
+    "att_dim": 64,
+    "hidden_dim": 256,
+    "n_head": 4,
+    "emb_dim": 64,
+    "emb_ks": 4,
+    "emb_hs": 1,
+    "dropout": 0.1,
+    "eps": 1e-05,
+    "angle_dim": 40,
+    "spk_emb_dim": 256,
+    "spk_encoder_type": "simple",
+    "spk_encoder_ckpt": null,
+    "freeze_spk_encoder": false,
+    "act_loss_weight": 0.1,
+    "si_snr_loss_weight": 0,
+    "waveform_loss_weight": 0,
+    "spatial_loss_weight": 0,
+    "ipd_loss_weight": 0.15,
+    "coherence_loss_weight": 0.03,
+    "spatial_energy_floor_db": -40,
+    "coherence_smoothing_frames": 5,
+    "spatial_loss_eps": 1e-06,
+    "cue_mode": "doa_only",
+    "use_masked_tac": true,
+    "tac_insert": "every_block",
+    "use_geometry_embedding": true,
+    "preserve_geometry_scale": true,
+    "geom_emb_dim": 16,
+    "tac_hidden_dim": 64,
+    "use_clue_gate": true,
+    "use_activity_head": true,
+    "channel_comm_type": "tac",
+    "deftan_attention_type": "coattention",
+    "geometry_embedding_type": "static",
+    "coattention_aggregation": "mean",
+    "disable_geometry_conditioning": true
+  },
+  "train_data": {
+    "input_dir": "data/LibriSpeech",
+    "dset": "train",
+    "sr": 8000,
+    "win": 256,
+    "subsets": [
+      "train-clean-100"
+    ],
+    "n_mics": 8,
+    "min_n_mics": 2,
+    "max_n_mics": 8,
+    "variable_n_mics": true,
+    "return_array_metadata": true,
+    "geometry_types": [
+      "linear",
+      "planar",
+      "sparse",
+      "random"
+    ],
+    "seen_geometry_types": [
+      "linear",
+      "planar"
+    ],
+    "unseen_geometry_types": [
+      "sparse",
+      "random"
+    ],
+    "geometry_split": "seen",
+    "linear_spacing_range": [
+      0.025,
+      0.08
+    ],
+    "planar_spacing_range": [
+      0.025,
+      0.08
+    ],
+    "random_aperture_range": [
+      0.05,
+      0.25
+    ],
+    "sensor_position_error_std": 0,
+    "n_interferers": 2,
+    "segment_len": 2,
+    "enrollment_len": 3,
+    "mic_spacing": 0.04,
+    "azim_type": "cycpos",
+    "d_model": 40,
+    "alpha": 80,
+    "num_samples": 10000,
+    "min_angle_gap": 15,
+    "use_reverb": true,
+    "rt60_range": [
+      0.15,
+      0.7
+    ],
+    "room_dim_range": {
+      "length": [
+        5,
+        10
+      ],
+      "width": [
+        4,
+        8
+      ],
+      "height": [
+        2.5,
+        4
+      ]
+    },
+    "source_distance_range": [
+      1.5,
+      3
+    ],
+    "mic_height": 1.5,
+    "target_anechoic": false
+  },
+  "val_data": {
+    "input_dir": "data/LibriSpeech",
+    "dset": "val",
+    "sr": 8000,
+    "win": 256,
+    "subsets": [
+      "dev-clean"
+    ],
+    "n_mics": 8,
+    "min_n_mics": 2,
+    "max_n_mics": 8,
+    "variable_n_mics": true,
+    "return_array_metadata": true,
+    "geometry_types": [
+      "linear",
+      "planar",
+      "sparse",
+      "random"
+    ],
+    "seen_geometry_types": [
+      "linear",
+      "planar"
+    ],
+    "unseen_geometry_types": [
+      "sparse",
+      "random"
+    ],
+    "geometry_split": "all",
+    "linear_spacing_range": [
+      0.025,
+      0.08
+    ],
+    "planar_spacing_range": [
+      0.025,
+      0.08
+    ],
+    "random_aperture_range": [
+      0.05,
+      0.25
+    ],
+    "sensor_position_error_std": 0,
+    "n_interferers": 2,
+    "segment_len": 2,
+    "enrollment_len": 3,
+    "mic_spacing": 0.04,
+    "azim_type": "cycpos",
+    "d_model": 40,
+    "alpha": 80,
+    "num_samples": 1000,
+    "min_angle_gap": 15,
+    "use_reverb": true,
+    "rt60_range": [
+      0.15,
+      0.7
+    ],
+    "room_dim_range": {
+      "length": [
+        5,
+        10
+      ],
+      "width": [
+        4,
+        8
+      ],
+      "height": [
+        2.5,
+        4
+      ]
+    },
+    "source_distance_range": [
+      1.5,
+      3
+    ],
+    "mic_height": 1.5,
+    "target_anechoic": false
+  },
+  "test_data": {
+    "input_dir": "data/LibriSpeech",
+    "dset": "test",
+    "sr": 8000,
+    "win": 256,
+    "subsets": [
+      "test-clean"
+    ],
+    "n_mics": 8,
+    "min_n_mics": 2,
+    "max_n_mics": 8,
+    "variable_n_mics": true,
+    "return_array_metadata": true,
+    "geometry_types": [
+      "linear",
+      "planar",
+      "sparse",
+      "random"
+    ],
+    "seen_geometry_types": [
+      "linear",
+      "planar"
+    ],
+    "unseen_geometry_types": [
+      "sparse",
+      "random"
+    ],
+    "geometry_split": "unseen",
+    "linear_spacing_range": [
+      0.025,
+      0.08
+    ],
+    "planar_spacing_range": [
+      0.025,
+      0.08
+    ],
+    "random_aperture_range": [
+      0.05,
+      0.25
+    ],
+    "sensor_position_error_std": 0.01,
+    "n_interferers": 2,
+    "segment_len": 2,
+    "enrollment_len": 3,
+    "mic_spacing": 0.04,
+    "azim_type": "cycpos",
+    "d_model": 40,
+    "alpha": 80,
+    "num_samples": 500,
+    "min_angle_gap": 15,
+    "use_reverb": true,
+    "rt60_range": [
+      0.15,
+      0.7
+    ],
+    "room_dim_range": {
+      "length": [
+        5,
+        10
+      ],
+      "width": [
+        4,
+        8
+      ],
+      "height": [
+        2.5,
+        4
+      ]
+    },
+    "source_distance_range": [
+      1.5,
+      3
+    ],
+    "mic_height": 1.5,
+    "target_anechoic": false
+  },
+  "optim": {
+    "lr": 0.0005,
+    "weight_decay": 0
+  },
+  "lr_sched": {
+    "mode": "max",
+    "factor": 0.1,
+    "patience": 5,
+    "min_lr": 5e-06,
+    "threshold": 0.1,
+    "threshold_mode": "abs"
+  },
+  "base_metric": "scale_invariant_signal_noise_ratio_i",
+  "fix_lr_epochs": 50,
+  "epochs": 100,
+  "batch_size": 8,
+  "eval_batch_size": 8,
+  "n_workers": 8
+}

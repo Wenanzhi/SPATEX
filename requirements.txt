@@ -1,0 +1,12 @@
+# Versions observed in the experiment environment; install matching torch/audio first.
+torch==2.4.1
+torchaudio==2.4.1
+einops==0.8.1
+numpy==1.23.5
+scipy==1.10.1
+pandas==2.0.3
+matplotlib==3.7.5
+tensorboardX==2.6.2.2
+tqdm==4.67.3
+soundfile==0.13.1
+packaging>=21

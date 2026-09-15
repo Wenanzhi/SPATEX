@@ -1,0 +1,75 @@
+{
+  "config": {
+    "input_dir": "data/LibriSpeech",
+    "dset": "test",
+    "sr": 8000,
+    "win": 256,
+    "subsets": [
+      "test-clean"
+    ],
+    "n_interferers": 2,
+    "enrollment_len": 3.0,
+    "azim_type": "cycpos",
+    "d_model": 40,
+    "alpha": 80,
+    "min_angle_gap": 15.0,
+    "use_reverb": true,
+    "rt60_range": [
+      0.15,
+      0.7
+    ],
+    "room_dim_range": {
+      "length": [
+        5.0,
+        10.0
+      ],
+      "width": [
+        4.0,
+        8.0
+      ],
+      "height": [
+        2.5,
+        4.0
+      ]
+    },
+    "source_distance_range": [
+      1.5,
+      3.0
+    ],
+    "mic_height": 1.5,
+    "target_anechoic": false,
+    "return_array_metadata": true,
+    "n_mics": 8,
+    "max_n_mics": 8,
+    "min_n_mics": 2,
+    "variable_n_mics": true,
+    "mic_spacing": 0.04,
+    "geometry_types": [
+      "linear",
+      "planar"
+    ],
+    "seen_geometry_types": [
+      "linear",
+      "planar"
+    ],
+    "unseen_geometry_types": [],
+    "geometry_split": "seen",
+    "linear_spacing_range": [
+      0.025,
+      0.08
+    ],
+    "planar_spacing_range": [
+      0.025,
+      0.08
+    ],
+    "random_aperture_range": [
+      0.05,
+      0.25
+    ],
+    "sensor_position_error_std": 0.0,
+    "segment_len": 2.0,
+    "num_samples": 500
+  },
+  "num_samples": 500,
+  "segment_len": 2.0
+}
