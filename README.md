@@ -1,11 +1,28 @@
-# PACT
+# SPATEX
 
-**Permutation-equivariant Array-agnostic Consensus for Target speech extraction**
+**Spatial Preservation for Array-Flexible Target Speech Extraction**
 
-Code accompanying the manuscript **PACT: Array-Agnostic Multichannel-to-Multichannel
-Target Speech Extraction**. PACT uses the mixture, microphone coordinates, a
+[English](README.md) | [简体中文](README_zh.md)
+
+Code accompanying the manuscript **SPATEX: Array-Flexible Multichannel-to-Multichannel
+Target Speech Extraction with Spatial Cue Preservation**. SPATEX uses the mixture, microphone coordinates, a
 channel-validity mask, and target azimuth to reconstruct one reverberant target
-waveform per microphone. The variable-array model supports 2–8 microphones at 8 kHz.
+waveform per microphone. The variable-array model is trained with 2–8 microphones at 8 kHz.
+
+SPATEX was previously named PACT. The repository name, Python package `pact`, and
+configuration filenames retain their existing names for compatibility.
+
+## Architecture
+
+[![SPATEX architecture: microphone-wise encoding, geometry-aware TAC, DOA-conditioned extraction with temporal co-attention, and microphone-wise reconstruction.](docs/figures/spatex_architecture.png)](docs/figures/spatex_architecture.pdf)
+
+**Figure 1. SPATEX architecture.** Geometry-aware TAC exchanges information across
+microphone streams, while target-DOA conditioning guides extraction. Temporal
+co-attention shares an attention map across microphones and retains each
+microphone's value stream. A shared decoder reconstructs the reverberant target
+image at each microphone. [Vector PDF](docs/figures/spatex_architecture.pdf).
+
+## Release status
 
 **Release candidate for author review.** The archived training configs include
 `0.1 * activity_loss`, whereas the supplied manuscript specifies
@@ -122,23 +139,35 @@ for SRP-PHAT direction preservation and signed DOA perturbation evaluation.
 
 | Config name | Purpose | Archived checkpoint |
 |---|---|---|
-| `pact_full` | PACT, shared mean logits, IPD + Coh | 85.pt |
+| `pact_full` | SPATEX, shared mean logits, IPD + Coh | 85.pt |
 | `independent_full` | Independent temporal attention, same TAC and spatial losses | 84.pt |
 | `pact_pcm` | Shared attention, spatial losses disabled | 99.pt |
 | `pact_ipd` | Shared attention, IPD | 89.pt |
 | `pact_coherence` | Shared attention, Coh | 99.pt |
-| `pact_fixed4` | Fixed four-mic PACT | 97.pt |
+| `pact_fixed4` | Fixed four-mic SPATEX | 97.pt |
 | `pact_no_geometry` | Unstable no-geometry diagnostic | No reported score |
 
 All six scored archived configs have activity-loss weight 0.1. The earlier
-`sqrt_count` model is a historical comparison, not the final PACT configuration.
+`sqrt_count` model is a historical comparison, not the final SPATEX configuration.
 The exact experiment names and source config hashes are in
 [experiment_index.json](docs/experiment_index.json).
+
+### Robustness to target-DOA cue errors
+
+[![SI-SNR improvement and DOA drift versus absolute target-DOA cue error from 0 to 15 degrees, comparing variable-array and fixed-four-microphone SPATEX with external baselines.](docs/figures/spatex_doa_robustness.png)](docs/figures/spatex_doa_robustness.pdf)
+
+**Figure 2. Robustness under the fixed four-microphone linear-array condition.**
+Results at positive and negative offsets of equal magnitude are averaged over
+the same 500 scenes. The shaded region spans the four external baselines, and
+the dashed gray curve shows the best external result at each error magnitude.
+Panels show SI-SNRi (higher is better) and output–target DOA drift (lower is better).
+[Vector PDF](docs/figures/spatex_doa_robustness.pdf) ·
+[Signed-offset results](results/figure2_signed.csv).
 
 ## Repository map
 
 - `pact/`: public inference API and WAV command.
-- `src/training/`: original PACT backbone, losses, data, training and evaluation.
+- `src/training/`: SPATEX backbone, losses, data, training and evaluation.
 - `configs/`: portable archived and manuscript-aligned recipes.
 - `data_protocol/`: sanitized configurations of the three saved test conditions.
 - `results/`: archived metrics and their source ledger; no new training results.
