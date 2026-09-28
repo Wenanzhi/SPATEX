@@ -1,0 +1,12 @@
+[
+  {
+    "name": "spatex_variable",
+    "config": "configs/spatex_variable.json",
+    "checkpoint": "checkpoints/spatex_variable.pt",
+    "url": "https://github.com/Wenanzhi/SPATEX/raw/refs/heads/main/checkpoints/spatex_variable.pt",
+    "epoch": 85,
+    "parameters": 4567660,
+    "size_bytes": 18513888,
+    "sha256": "99d873350c1346f6ded2bb1fc45c055381412b8f2d1bf1f2e4f2f7324896d815"
+  }
+]

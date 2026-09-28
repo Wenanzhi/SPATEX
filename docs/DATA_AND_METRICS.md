@@ -1,25 +1,24 @@
-# Data and metric protocol
+# Data and evaluation protocol
 
-The input target is the reverberant source image at every valid microphone.
-Training samples contain one target and two independently scaled interferers,
-at 8 kHz, with two-second mixtures and a three-second enrollment segment used
-only by the archived training auxiliary branch. The inference separator is
-conditioned on target direction, not speaker identity.
+## Data
 
-| Saved condition | Configuration |
-|---|---|
-| `1_4ch_fixed` | Four microphones, linear array, 4 cm spacing |
-| `3_var_match` | 2–8 microphones, linear/planar, 2.5–8 cm spacing |
-| `4_var_unmatch` | 2–8 microphones, sparse/random, 1 cm position perturbations |
+Audio is sampled at 8 kHz. Each two-second training mixture contains one target
+and two independently scaled interferers. The target is the reverberant source
+image at every valid microphone. A three-second enrollment segment is used by
+the auxiliary training branch; inference requires only the target direction.
+LibriSpeech `train-clean-100`, `dev-clean` and `test-clean` provide the respective
+speaker-disjoint training, validation and test sources.
 
-The precise generator parameters are in `data_protocol/*/meta.json`. In the
-implementation, sparse layouts sample microphone positions from a 5-by-5 planar
-grid with spacing drawn from `planar_spacing_range=[0.025, 0.08]` metres,
-whereas random layouts use `random_aperture_range=[0.05, 0.25]` metres. The
-paper's summary “2.5–25 cm apertures” should be reconciled with these different
-layout-specific definitions. These values have not been silently changed.
+| Saved subset | Microphones | Geometry |
+|---|---|---|
+| `1_4ch_fixed` | 4 | Linear, 4 cm spacing |
+| `3_var_match` | 2–8 | Linear/planar, 2.5–8 cm spacing |
+| `4_var_unmatch` | 2–8 | Sparse/random, 1 cm position perturbations |
 
-Saved subset layout:
+Training uses linear/planar arrays; validation includes sparse/random layouts.
+Sparse arrays sample positions from a 5-by-5 planar grid with grid spacing
+2.5–8 cm. Random arrays use aperture parameter range 5–25 cm. Full saved-set
+parameters are in [data_protocol](../data_protocol).
 
 ```text
 3_var_match/
@@ -28,47 +27,48 @@ Saved subset layout:
   target/000000.wav
   enrollment/000000.wav
   meta/000000.json
-  ...
 ```
 
-Each sample metadata file includes microphone coordinates, valid microphone
-count and target azimuth. Mixture and target WAVs contain valid channels only;
-the saved-set loader pads them together with coordinates and mask. All channel
-permutations must be applied consistently to waveforms, coordinates and mask.
+Each sample's metadata includes microphone coordinates, valid microphone count
+and target azimuth. WAVs contain valid channels only. The loader pads audio,
+coordinates and masks together. Preserve their shared channel order.
+The original builder writes PCM16 with clipping; inference writes FLOAT WAV.
+Do not independently normalize output channels when measuring spatial fidelity.
+Published scores used saved WAVs; newly generated files have not been verified
+to match those original WAVs byte for byte.
 
-## Signal and spatial scores
+## Signal and spatial metrics
 
-`--paper_metrics` computes reference-channel SI-SNRi/SNRi, NB-PESQ and STOI.
+`--paper_metrics` enables reference-channel SI-SNRi, SNRi, NB-PESQ and STOI.
 Use `reference_scale_invariant_signal_noise_ratio_i` and
-`reference_signal_noise_ratio_i`, not the unprefixed all-channel metrics.
+`reference_signal_noise_ratio_i` in detailed CSV output. Unprefixed SI-SNRi/SNRi
+average valid output channels, as used for training checkpoint selection.
 
-Pairwise metrics average valid unordered microphone pairs within each scene,
-then average scenes. ILD is whole-utterance energy-ratio error in dB. IPD is
-absolute circular STFT phase error in radians with a rectangular 256/128 STFT.
-ITD uses whole-utterance GCC-PHAT at 8 kHz, a ±1 ms search and integer lags
-(125 microseconds per step). It is separate from the interpolated DOA localizer.
-Training spatial losses use Hann windows and target-active bins; evaluation
-IPD is not the training IPD-loss value.
+Pairwise spatial metrics first average valid unordered microphone pairs within
+each scene, then average scenes:
 
-## Direction preservation / DOA errors
+- ILD: whole-utterance energy-ratio error in dB.
+- IPD: absolute circular phase error in radians, rectangular 256/128 STFT.
+- ITD: whole-utterance GCC-PHAT at 8 kHz, a ±1 ms search and integer lags
+  (125 microseconds per step).
 
-The frozen SRP-PHAT localizer uses 1024-sample frames, 256-sample hop,
-200–3500 Hz, 1-degree azimuth grid, -40 dB label-derived active-frame selection,
-and speed of sound 343 m/s. Rank-one horizontal geometry receives front/back
-reflection handling. `Pres@5` reports output-versus-label direction drift at
-most 5 degrees, not accuracy against the input target clue.
+Spatial training losses use Hann windows and target-active bins. The evaluation
+IPD metric differs from the IPD training loss.
 
-```bash
-python -m src.training.eval_doa_preservation pact_full \
-  --project_root . --testset data/Testset/seg_2s/3_var_match \
-  --output_root outputs/doa --label_cache outputs/labels_match.npz \
-  --build_label_cache --pretrain_path best \
-  --estimator srp_phat --device cpu --num_samples 500
-```
+## Direction preservation and cue errors
 
-For the paper's fixed-array clue-error study, use `1_4ch_fixed` and
-`--offsets -15 -10 -5 0 5 10 15`. Average the positive and negative offsets of
-equal magnitude across the same scenes for Figure 2. Keep caches separate for
-different saved subsets and localizer configurations. These commands permit
-reevaluation; they do not assert equality with every archived floating-point
-export, whose original settings should be checked in its source manifest.
+`src.training.eval_doa_preservation` uses SRP-PHAT with 1024-sample frames,
+256-sample hop, 200–3500 Hz, a 1-degree azimuth grid, label-derived active-frame
+selection at -40 dB and sound speed 343 m/s. Rank-one horizontal arrays use
+front/back reflection handling. `Pres@5` is the fraction of scenes with
+output-to-target DOA drift at most 5 degrees.
+
+For cue-error tests, use signed offsets `-15 -10 -5 0 5 10 15` on the same fixed
+four-microphone scenes. Average positive and negative offsets of equal magnitude
+when plotting absolute cue error. Keep label caches separate for different
+subsets or localizer settings. `src.training.eval_doa_mismatch` also supports
+signal/spatial evaluation under perturbed cues.
+
+Use explicit checkpoint paths for the released weights. The `best` selector
+requires validation history from a full training checkpoint. See the
+[README](../README.md) for complete commands.

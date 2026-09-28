@@ -484,7 +484,10 @@ def _resolve_checkpoint(experiment_dir, base_metric, pretrain_path):
     if not checkpoint.is_file():
         raise FileNotFoundError(checkpoint)
     payload = torch.load(checkpoint, map_location='cpu')
-    epoch = int(payload.get('epoch', int(checkpoint.stem)))
+    epoch = payload.get('epoch')
+    if epoch is None:
+        epoch = int(checkpoint.stem) if checkpoint.stem.isdigit() else -1
+    epoch = int(epoch)
     history = np.asarray(
         payload.get('val_metrics', {}).get(base_metric, []),
         dtype=np.float64,

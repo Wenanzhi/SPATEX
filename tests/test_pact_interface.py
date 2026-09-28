@@ -11,7 +11,7 @@ from src.training.network_DeFTAN2 import aggregate_coattention_logits
 
 
 def small_config():
-    config = json.loads((Path(__file__).parents[1] / 'configs/archived/pact_full.json').read_text())
+    config = json.loads((Path(__file__).parents[1] / 'configs/spatex_variable.json').read_text())
     config['model_params'].update(n_layers=1, emb_dim=8, att_dim=8, hidden_dim=16,
                                   n_head=2, dropout=0.0, tac_hidden_dim=8)
     return config

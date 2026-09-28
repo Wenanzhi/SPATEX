@@ -1,6 +1,6 @@
 cff-version: 1.2.0
-message: "Please cite the PACT manuscript; publication metadata is pending author review."
-title: "PACT: Array-Agnostic Multichannel-to-Multichannel Target Speech Extraction"
+message: "Please cite SPATEX when using this code or its pretrained models."
+title: "SPATEX: Array-Flexible Multichannel-to-Multichannel Target Speech Extraction with Spatial Cue Preservation"
 type: software
 version: 0.1.0
 authors:

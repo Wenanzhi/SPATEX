@@ -1,51 +1,136 @@
-# SPATEX 开源候选版
+# SPATEX
 
 **Spatial Preservation for Array-Flexible Target Speech Extraction**
 
 [English](README.md) | [简体中文](README_zh.md)
 
-论文：**SPATEX: Array-Flexible Multichannel-to-Multichannel Target Speech Extraction
-with Spatial Cue Preservation**。
+本仓库提供 SPATEX 的训练、推理、测试代码，以及主模型 epoch 85 的权重。
+模型输入多通道混合语音、麦克风坐标和目标方位角，输出每个麦克风上的混响目标语音。
+主模型使用 8 kHz 音频及 2–8 麦克风阵列训练。
 
-SPATEX 根据多通道混合语音、麦克风坐标、有效通道掩码和目标方位角，为每个麦克风重建目标说话人的混响声像。
-模型原名为 PACT；仓库名称、Python 包 `pact` 和配置文件名保持不变，以兼容现有使用方式。
+![SPATEX 架构](docs/figures/spatex_architecture.png)
 
-本目录是供作者审阅的独立代码包。完整安装和运行命令见 [README](README.md)。
+## 安装
 
-## 模型架构
+实验环境：Python 3.8.20、PyTorch/torchaudio 2.4.1、CUDA 12.1。
+先安装适合本机的 PyTorch/torchaudio，再执行：
 
-[![SPATEX 架构：逐麦克风编码、几何感知 TAC、DOA 条件提取、时间 co-attention 和逐麦克风重建。](docs/figures/spatex_architecture.png)](docs/figures/spatex_architecture.pdf)
+```bash
+python -m pip install -r requirements.txt
+python -m pip install -e . --no-deps
+python -m pip install -r requirements-data.txt  # 在线混响生成和测试集生成
+python -m pip install -r requirements-eval.txt  # PESQ、STOI
+```
 
-**图 1. SPATEX 模型架构。** 几何感知 TAC 在麦克风之间交换信息，DOA 条件指定提取目标。
-时间 co-attention 共享注意力图，同时保留各麦克风自己的 value 特征流；共享解码器分别重建各麦克风的目标声像。
-[矢量 PDF](docs/figures/spatex_architecture.pdf)。
+以下命令均在仓库根目录执行。
 
-## 先核对这一处差异
+## 主模型权重
 
-当前论文写 `PCM + 0.15 IPD + 0.03 Coh`；与表格结果对应的归档配置仍启用
-`0.1 Act`。`doa_only` 关闭的是分离路径中的活动门控，并不自动关闭活动辅助损失。
+| 模型 | 配置 | 权重 | 原始 epoch 标签 | 参数量 |
+|---|---|---|---:|---:|
+| SPATEX variable-array | [配置](configs/spatex_variable.json) | [下载](https://github.com/Wenanzhi/SPATEX/raw/refs/heads/main/checkpoints/spatex_variable.pt) | 85 | 4,567,660 |
 
-- `configs/archived/` 保留归档损失设置，仅替换本机数据路径。
-- `configs/manuscript/` 将 Act 权重设为零，尚未据此重训，不能宣称能复现论文数值。
+普通 `git clone` 即包含权重，无需 Git LFS。权重逐张量保留原始 `85.pt` 的模型参数，
+移除了优化器、调度器、AMP 状态和指标历史，适用于推理及测试。
+精确断点续训需要原始完整训练 checkpoint。
 
-论文表 1 的 PCM 行来自 `abl_m2_coatt_logit_mean_pcm/99.pt`，不是另一个
-`pure_pcm` 实验。主模型为 `abl_m2_coatt_logit_mean_full/85.pt`，聚合方式为
-`mean`，不是旧 `sqrt_count`。
+```bash
+sha256sum -c checkpoints/SHA256SUMS
+```
 
-## 已整理内容
+文件大小和校验值见 [manifest](checkpoints/manifest.json)。Python 包沿用旧名称 `pact`。
 
-SPATEX 与独立注意力对照、损失消融、固定四麦克风配置，训练/数据生成/评测入口，
-无需 enrollment 的推理接口，以及回归测试。保留原网络参数名以兼容 checkpoint。
-语音数据、权重、论文 PDF、内部会话、集群脚本和训练日志不在本候选仓库中。
+## 推理
 
-外部基线的覆盖范围见 [BASELINES.md](docs/BASELINES.md)；复现限制见
-[REPRODUCIBILITY.md](docs/REPRODUCIBILITY.md)。作者审阅说明位于本目录上一级。
+```bash
+python -m pact.infer \
+  --config configs/spatex_variable.json \
+  --checkpoint checkpoints/spatex_variable.pt \
+  --mixture /path/to/mixture.wav \
+  --geometry examples/geometry_fixed4.json \
+  --azimuth 30 --output outputs/target.wav --device cpu
+```
 
-## 目标 DOA 偏差实验
+输入须为 8 kHz。麦克风坐标单位为米，坐标行顺序须与 WAV 通道顺序一致。
+方位角从 +y 朝 +x 方向计算，+z 向上。示例坐标是间距 4 cm 的四麦线阵，
+使用时请替换成实际阵列坐标。推理无需注册语音，输出为浮点 WAV。
 
-[![目标 DOA 偏差为 0–15 度时，变量阵列与固定四麦克风 SPATEX 及外部基线的 SI-SNRi 和 DOA drift。](docs/figures/spatex_doa_robustness.png)](docs/figures/spatex_doa_robustness.pdf)
+## 训练
 
-**图 2. 固定四麦克风线性阵列上的目标 DOA 偏差鲁棒性。** 相同偏差幅度的正负方向结果在同一组 500 个场景上取平均。
-灰色区域表示四个外部基线的结果范围，灰色虚线表示各偏差幅度下的最佳外部结果。
-左图为 SI-SNRi（越高越好），右图为输出与目标之间的 DOA drift（越低越好）。
-[矢量 PDF](docs/figures/spatex_doa_robustness.pdf) · [带符号偏差的结果数据](results/figure2_signed.csv)。
+将 LibriSpeech 的 `train-clean-100`、`dev-clean`、`test-clean` 放在同一目录：
+
+```bash
+python scripts/prepare_experiment.py \
+  --config configs/spatex_variable.json \
+  --output experiments/spatex_variable \
+  --librispeech-root /path/to/LibriSpeech
+
+python -m src.training.train experiments/spatex_variable --use_cuda --gpu_ids 0
+```
+
+八卡、全局 batch size 为 8 的命令：
+
+```bash
+torchrun --standalone --nproc_per_node=8 -m src.training.train \
+  experiments/spatex_variable --use_cuda --find_unused_parameters
+```
+
+主模型损失为 PCM + 0.15 IPD + 0.03 Coh + 0.1 Act；配置保留实际训练设置。
+使用 Adam，初始学习率 0.0005，梯度裁剪 0.5。原训练器的 `epochs=100` 对应
+0–100 的 epoch 标签。最优 checkpoint 根据有效输出通道平均验证 SI-SNRi 选择。
+
+`configs/` 同时保留 fixed-4、Independent、PCM、IPD、Coh 五种训练配置，
+这些配置也保留 Act 辅助损失；本次只发布主模型 epoch 85 的权重。
+
+## 测试
+
+生成测试集：
+
+```bash
+python -m src.training.build_testsets \
+  --librispeech_root /path/to/LibriSpeech --out_root data/Testset \
+  --segments 2 --num_samples 500 \
+  --subsets 1_4ch_fixed 3_var_match 4_var_unmatch
+```
+
+准备实验目录并测试已保存的 WAV：
+
+```bash
+mkdir -p experiments/spatex_variable
+cp configs/spatex_variable.json experiments/spatex_variable/config.json
+cp checkpoints/spatex_variable.pt experiments/spatex_variable/85.pt
+
+python -m src.training.run_testsets spatex_variable \
+  --testset_root data/Testset --segment seg_2s \
+  --subsets 1_4ch_fixed 3_var_match 4_var_unmatch \
+  --checkpoint 85.pt --paper_metrics --detailed \
+  --out_root outputs/metrics --detailed_out_root outputs/per_scene \
+  --use_cuda --gpu_ids 0
+```
+
+发布权重请显式指定 `85.pt`；`best` 选项需要完整训练 checkpoint 的验证历史。
+删除 CUDA 选项即可使用 CPU。DOA preservation 测试：
+
+```bash
+python -m src.training.eval_doa_preservation spatex_variable \
+  --project_root . --testset data/Testset/seg_2s/3_var_match \
+  --output_root outputs/doa --label_cache outputs/labels_match.npz \
+  --build_label_cache --pretrain_path 85.pt \
+  --estimator srp_phat --device cpu --num_samples 500
+```
+
+DOA 误差实验改用 `1_4ch_fixed`、独立的 label cache，并添加
+`--offsets -15 -10 -5 0 5 10 15`。阵列定义与指标口径见
+[数据和评测说明](docs/DATA_AND_METRICS.md)。语音录音和已保存测试 WAV 不随仓库发布；
+重新生成的 WAV 尚未验证与原测试集逐字节相同。
+
+## 基本检查与许可证
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
+```
+
+保留权重加载、前向/损失/指标、麦克风掩码和置换等基本检查。
+许可证及来源说明见 [LICENSE](LICENSE)、[第三方声明](THIRD_PARTY_NOTICES.md)，
+引用信息见 [CITATION.cff](CITATION.cff)。
