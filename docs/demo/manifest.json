@@ -1,0 +1,185 @@
+{
+  "model": "SPATEX variable-array",
+  "epoch": 85,
+  "checkpoint_sha256": "99d873350c1346f6ded2bb1fc45c055381412b8f2d1bf1f2e4f2f7324896d815",
+  "configuration_sha256": "0ec5d5d8f1430ad41dec9acf233f6e3d13b26816b40a909907cb8945808c18a3",
+  "selection": "First saved scene matching each geometry and microphone count; no score filtering.",
+  "playback": "One shared attenuation gain per scene across signals and microphones; PCM16 playback, original float multichannel estimate downloadable.",
+  "spectrogram": {
+    "n_fft": 256,
+    "hop": 128,
+    "window": "Hann",
+    "db_range": [
+      -70,
+      0
+    ],
+    "reference": "Maximum magnitude across every signal and microphone in the scene."
+  },
+  "scenes": [
+    {
+      "id": "fixed",
+      "title": "Fixed linear array",
+      "subset": "1_4ch_fixed",
+      "source_scene": "000000",
+      "microphones": 4,
+      "geometry": "linear",
+      "sample_rate": 8000,
+      "duration": 6.0,
+      "azimuth": 321.18464437374433,
+      "mic_xyz": [
+        [
+          -0.05999999865889549,
+          0.0,
+          0.0
+        ],
+        [
+          -0.019999999552965164,
+          0.0,
+          0.0
+        ],
+        [
+          0.019999999552965164,
+          0.0,
+          0.0
+        ],
+        [
+          0.05999999865889549,
+          0.0,
+          0.0
+        ]
+      ],
+      "rt60": 0.2779634913649067,
+      "input_sir_db": -0.5079095371614635,
+      "playback_gain": 1.0,
+      "waveform_peak": 0.65948486328125,
+      "delta_ipd": 0.45777180790901184,
+      "delta_ild": 0.07400081306695938,
+      "delta_itd_us": 0.0,
+      "multichannel_download": "audio/fixed/spatex_multichannel.wav",
+      "source_hashes": {
+        "mixture": "e934009febfc218450d1e261fafaadee882b3a59f15be342fa75edde50c94faa",
+        "target": "bdbc69ad0af52a8f7f980f0d4c751cfa70af11a327d0ce6ec46a9dea442c35f3"
+      }
+    },
+    {
+      "id": "matched",
+      "title": "Matched planar array",
+      "subset": "3_var_match",
+      "source_scene": "000009",
+      "microphones": 6,
+      "geometry": "planar",
+      "sample_rate": 8000,
+      "duration": 6.0,
+      "azimuth": 333.48867291373125,
+      "mic_xyz": [
+        [
+          -0.0572335422039032,
+          -0.0572335422039032,
+          0.0
+        ],
+        [
+          -0.0572335422039032,
+          0.0,
+          0.0
+        ],
+        [
+          -0.0572335422039032,
+          0.0572335422039032,
+          0.0
+        ],
+        [
+          0.0,
+          -0.0572335422039032,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0572335422039032,
+          0.0
+        ]
+      ],
+      "rt60": 0.3481216081434739,
+      "input_sir_db": -2.4179783439195077,
+      "playback_gain": 1.0,
+      "waveform_peak": 0.927520751953125,
+      "delta_ipd": 0.635541558265686,
+      "delta_ild": 0.0786980465054512,
+      "delta_itd_us": 0.0,
+      "multichannel_download": "audio/matched/spatex_multichannel.wav",
+      "source_hashes": {
+        "mixture": "d9549ec8415d5dd12fdcda800e464563a13f8f1a2a39ed412dd5c274d44f30d9",
+        "target": "bd794e3e8030323f46a5359a0cfe72a61acf6bb7ed1a7b22283813565942c295"
+      }
+    },
+    {
+      "id": "unmatched",
+      "title": "Unmatched random array",
+      "subset": "4_var_unmatch",
+      "source_scene": "000002",
+      "microphones": 8,
+      "geometry": "random",
+      "sample_rate": 8000,
+      "duration": 6.0,
+      "azimuth": 80.88712008293113,
+      "mic_xyz": [
+        [
+          0.0814322680234909,
+          -0.07002288848161697,
+          -0.004788912832736969
+        ],
+        [
+          -0.0667816773056984,
+          0.07467421144247055,
+          0.0044771963730454445
+        ],
+        [
+          -0.018303843215107918,
+          0.06287899613380432,
+          0.019878966733813286
+        ],
+        [
+          0.024613793939352036,
+          0.020395616069436073,
+          0.009811723604798317
+        ],
+        [
+          0.07669389247894287,
+          -0.0969267264008522,
+          0.008348940871655941
+        ],
+        [
+          -0.022747410461306572,
+          0.06224924325942993,
+          -0.008743608370423317
+        ],
+        [
+          -0.024437610059976578,
+          -0.1122593879699707,
+          -0.002466936595737934
+        ],
+        [
+          -0.027268189936876297,
+          0.0621739998459816,
+          0.006382296793162823
+        ]
+      ],
+      "rt60": 0.35813461411780445,
+      "input_sir_db": 1.1721995591408323,
+      "playback_gain": 1.0,
+      "waveform_peak": 0.8468017578125,
+      "delta_ipd": 0.44629400968551636,
+      "delta_ild": 0.12732093036174774,
+      "delta_itd_us": 0.0,
+      "multichannel_download": "audio/unmatched/spatex_multichannel.wav",
+      "source_hashes": {
+        "mixture": "f79a32b8d8dd45f1d8d05727cb0ea2bcbbb3cf1a57c912e292bbc3af32ff6f02",
+        "target": "be14f12b97dc8abc646bdf8568c7e5a4fba4eb3582b294d02aa066a6ab4fa3ca"
+      }
+    }
+  ]
+}

@@ -23,3 +23,6 @@ events.out.tfevents.*
 
 # Released model weights are tracked; training checkpoints remain ignored.
 !/checkpoints/*.pt
+
+# Small audio examples for the static research demo.
+!/docs/demo/audio/**/*.wav

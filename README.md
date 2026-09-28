@@ -1,47 +1,37 @@
 # SPATEX
 
-**SPATEX: Array-Flexible Multichannel-to-Multichannel Target Speech Extraction Using Direction Clue**
+## Introduction
+
+Official PyTorch implementation of **SPATEX: Array-Flexible
+Multichannel-to-Multichannel Target Speech Extraction Using Direction Clue**.
 
 **Submitted to ICASSP 2027.**
 
-Wen Wen\*, Changda Chen\*, Yu Xi, Haoyu Li, Qiang Zhou, Guanyu Chen,
-Xiaoyu Gu, Bohan Li, Shuai Wang, and Kai Yu†
+**Wen Wen\*, Changda Chen\*, Yu Xi, Haoyu Li, Qiang Zhou, Guanyu Chen,
+Xiaoyu Gu, Bohan Li, Shuai Wang, and Kai Yu†**
 
 \* Equal contribution. † Corresponding author.
 
-Official implementation of SPATEX, including training and evaluation code and
-the pretrained variable-array model.
+[Code](https://github.com/Wenanzhi/SPATEX) | [Demo](https://wenanzhi.github.io/SPATEX/demo/) | [Pretrained model](#pretrained-model)
 
-[Overview](#overview) · [Results](#results) · [Installation](#installation) ·
-[Pretrained model](#pretrained-model) · [Inference](#inference) ·
-[Training](#training) · [Evaluation](#evaluation) · [Citation](#citation)
+SPATEX reconstructs the target speech image at every microphone using the
+microphone coordinates and a target direction-of-arrival clue. Geometry-aware
+channel exchange and shared temporal attention coordinate microphone-specific
+streams, while IPD and coherence supervision preserve interchannel relationships.
+A single model is trained with 2–8 microphones at 8 kHz; the paper also evaluates
+microphone-count extrapolation and robustness to direction-clue errors.
 
-## Overview
+## Network architecture
 
-SPATEX (**Spatial-information Preservation for Array-flexible Target speech
-EXtraction**) extracts a target speaker from a multichannel mixture using
-microphone coordinates and a target direction-of-arrival (DOA) clue. It
-reconstructs the reverberant target speech image at **every microphone**, retaining
-the interchannel spatial relationships needed for subsequent spatial processing.
+<img src="docs/figures/spatex_architecture.png" alt="SPATEX architecture: shared encoding, geometry-aware channel exchange, DOA-conditioned temporal co-attention and microphone-wise reconstruction." width="1000">
 
-The model combines:
+Encoder and decoder weights are shared across microphones. Temporal co-attention
+averages attention logits over valid microphones and applies the shared attention
+map to each microphone's own value features. Masked geometry-aware TAC supports
+variable channel counts and permutation-equivariant processing.
 
-- **Geometry-aware channel exchange:** masked transform–average–concatenate
-  (TAC) operations share information across valid microphones while preserving
-  permutation equivariance.
-- **Shared temporal attention:** attention logits are averaged across valid
-  microphones before softmax; the shared attention map is applied to each
-  microphone's own value features.
-- **Spatial supervision:** interchannel phase difference (IPD) and coherence
-  losses constrain the spatial relationships among reconstructed signals.
-
-Encoder and decoder weights are shared across microphones. The main model is
-trained on 2–8 microphones at 8 kHz; the paper also evaluates extrapolation to
-9–10 microphones and robustness to errors in the target-DOA clue.
-
-![Overview of SPATEX](docs/figures/spatex_architecture.png)
-
-## Results
+<details>
+<summary>Results reported in the paper</summary>
 
 Reference-channel SI-SNR improvement reported in **Table 2 of the paper**:
 
@@ -60,7 +50,34 @@ On the **fixed four-microphone linear array** (Table 3), the variable-array mode
 achieves **12.90 dB SI-SNRi**, **0.614 rad ΔIPD**, and **5.00 μs ΔITD**, without
 array-specific fine-tuning.
 
-## Installation
+</details>
+
+## Audio demo
+
+[**Open the interactive demo →**](https://wenanzhi.github.io/SPATEX/demo/)
+
+Explore three real six-second examples generated with the released epoch-85
+checkpoint: a four-microphone linear array, a six-microphone planar array, and an
+eight-microphone random array. Select a microphone to compare the mixture,
+SPATEX output and reverberant target, inspect waveforms or spectrograms, and
+view the array geometry and per-example spatial errors.
+
+[![SPATEX interactive demo](docs/demo/preview.png)](https://wenanzhi.github.io/SPATEX/demo/)
+
+For local use, open `docs/demo/index.html`, or serve the repository:
+
+```bash
+python -m http.server 8000
+# Open http://localhost:8000/docs/demo/
+```
+
+Audio is precomputed from the actual checkpoint. Shared playback gain and display
+scales preserve channel-level comparisons. See [demo details](docs/demo/README.md)
+for the deterministic sample selection and asset-generation command.
+
+## Quick start
+
+### Installation
 
 The experiment environment uses **Python 3.8.20**, **PyTorch/torchaudio 2.4.1**
 and **CUDA 12.1**. Install the matching PyTorch/torchaudio build for your machine.
@@ -75,7 +92,7 @@ python -m pip install -e . --no-deps
 `requirements.txt` includes training, room simulation, evaluation and test
 dependencies. Run all commands below from the repository root.
 
-## Pretrained model
+### Pretrained model
 
 | Model | Configuration | Weights | Epoch | Parameters |
 |---|---|---|---:|---:|
@@ -93,7 +110,7 @@ To verify the downloaded weights:
 sha256sum -c checkpoints/SHA256SUMS
 ```
 
-## Inference
+### Inference
 
 Provide an 8-kHz multichannel WAV, microphone coordinates, and the target azimuth.
 No enrollment speech is required.
@@ -117,7 +134,7 @@ name `pact`.
 - The output is a floating-point multichannel WAV containing the estimated
   target image at each microphone.
 
-## Training
+### Training
 
 Prepare the LibriSpeech `train-clean-100`, `dev-clean`, and `test-clean` subsets
 under a common directory. Training mixtures contain one target and two
@@ -233,7 +250,7 @@ If you use this code or checkpoint, please cite the submitted manuscript:
 }
 ```
 
-## Acknowledgments and license
+## License and acknowledgments
 
 The implementation builds on the M2M-TSE code family, with components originating
 from [DeFTAN-II](https://github.com/donghoney0416/DeFTAN-II) and
