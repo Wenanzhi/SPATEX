@@ -1,8 +1,9 @@
 cff-version: 1.2.0
-message: "Please cite SPATEX when using this code or its pretrained models."
-title: "SPATEX: Array-Flexible Multichannel-to-Multichannel Target Speech Extraction with Spatial Cue Preservation"
+message: "Please cite the accompanying SPATEX manuscript, submitted to ICASSP 2027."
+title: "SPATEX: Array-Flexible Multichannel-to-Multichannel Target Speech Extraction Using Direction Clue"
 type: software
 version: 0.1.0
+repository-code: "https://github.com/Wenanzhi/SPATEX"
 authors:
   - family-names: Wen
     given-names: Wen
@@ -12,15 +13,15 @@ authors:
     given-names: Yu
   - family-names: Li
     given-names: Haoyu
-  - family-names: Li
-    given-names: Bohan
   - family-names: Zhou
     given-names: Qiang
-  - family-names: Wang
-    given-names: Shuai
   - family-names: Chen
     given-names: Guanyu
   - family-names: Gu
     given-names: Xiaoyu
+  - family-names: Li
+    given-names: Bohan
+  - family-names: Wang
+    given-names: Shuai
   - family-names: Yu
     given-names: Kai

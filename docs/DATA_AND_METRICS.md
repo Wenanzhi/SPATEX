@@ -37,6 +37,24 @@ Do not independently normalize output channels when measuring spatial fidelity.
 Published scores used saved WAVs; newly generated files have not been verified
 to match those original WAVs byte for byte.
 
+## Released training recipes
+
+The released epoch-85 model and the six configurations retain the actual
+experiment settings. The main recipe uses Adam with initial learning rate
+0.0005, global batch size 8 and gradient clipping at 0.5. Its spatial-loss weights
+are 0.15 for IPD and 0.03 for coherence. The configurations also retain the
+auxiliary activity loss with weight 0.1 and the corresponding speaker/activity
+modules. These modules are needed for training and strict checkpoint loading;
+enrollment speech is not required for DOA-only inference.
+
+The original trainer's `epochs=100` loop uses epoch labels 0 through 100
+inclusive. Checkpoint selection uses validation SI-SNRi averaged across valid
+output channels. The released weights omit optimizer, scheduler, AMP and
+metric-history state, so use a full training checkpoint for exact resumption.
+
+Basic interface, masking and checkpoint checks can be run after installation
+with `python -m pytest -q`.
+
 ## Signal and spatial metrics
 
 `--paper_metrics` enables reference-channel SI-SNRi, SNRi, NB-PESQ and STOI.
