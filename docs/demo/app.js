@@ -1,162 +1,210 @@
 (() => {
   'use strict';
   const data = window.SPATEX_DEMO;
-  const byId = id => document.getElementById(id);
+  const status = document.getElementById('load-status');
   if (!data?.scenes?.length) {
-    byId('load-status').textContent = 'Example data could not be loaded. Please check that data.js is beside this page.';
+    status.textContent = 'Audio examples could not be loaded. Please reload this page.';
     return;
   }
-  const names = {mixture: 'Input mixture', estimate: 'SPATEX', reference: 'Target reference'};
-  const colors = {mixture: '#7a8796', estimate: '#087f81', reference: '#607eac'};
-  const descriptions = {
-    fixed: 'Four microphones with 4 cm spacing. The variable-array model is used directly, without fixed-array fine-tuning.',
-    matched: 'A regular planar grid from a geometry family used in training, with six valid microphone channels.',
-    unmatched: 'An irregular eight-microphone array with 1 cm position perturbations, outside the training geometry families.'
+
+  const names = {mixture: 'Mixture', estimate: 'SPATEX', reference: 'Target reference'};
+  const colors = {mixture: '#8590a3', estimate: '#315abc', reference: '#5a8081'};
+  const labels = {
+    fixed: ['4-mic linear', 'Fixed array'],
+    matched: ['6-mic planar', 'Matched geometry'],
+    unmatched: ['8-mic random', 'Unmatched geometry']
   };
-  const conditions = {fixed: 'Fixed-array evaluation', matched: 'Matched geometry', unmatched: 'Unmatched geometry'};
-  const state = {scene: 0, mic: 0, track: 'estimate', view: 'waveform'};
-  const player = byId('player');
-  const images = new Map();
-  let audioVersion = 0;
-  const current = () => data.scenes[state.scene];
-  const channel = () => current().channels[state.mic];
-  const announce = text => { byId('announcer').textContent = text; };
+  const kinds = Object.keys(names);
+  const rows = [];
+  const announcer = document.getElementById('announcer');
+  const dialog = document.getElementById('spectrogram-dialog');
+  let activeAudio = null;
 
-  function updateTrackUI() {
-    document.querySelectorAll('[data-track]').forEach(el => el.classList.toggle('selected', el.dataset.track === state.track));
-    document.querySelectorAll('[data-listen]').forEach(button => {
-      const selected = button.dataset.listen === state.track;
-      button.setAttribute('aria-pressed', String(selected));
-      button.textContent = selected && !player.paused ? 'Pause' : 'Play';
-      button.setAttribute('aria-label', `${button.textContent} ${names[button.dataset.listen]} at microphone ${state.mic + 1}`);
-    });
-    byId('now-playing').textContent = `${names[state.track]} · Mic ${state.mic + 1}`;
-    player.setAttribute('aria-label', `${names[state.track]} at microphone ${state.mic + 1}`);
-  }
-
-  function changeAudio(keepTime, resume) {
-    const position = keepTime && Number.isFinite(player.currentTime) ? player.currentTime : 0;
-    const version = ++audioVersion;
-    player.pause();
-    player.src = channel().tracks[state.track].audio;
-    player.onloadedmetadata = () => {
-      if (version !== audioVersion) return;
-      player.currentTime = Math.min(position, Math.max(0, player.duration - .02));
-      if (resume) player.play().catch(() => announce('Use the audio play button to start playback.'));
-      drawCharts();
-    };
-    player.load();
-    updateTrackUI();
-  }
-
-  function drawGeometry() {
-    const scene = current();
-    const host = byId('geometry-plot');
-    const w = Math.max(240, host.clientWidth), h = 255;
-    const center = [scene.mic_xyz.reduce((s,p)=>s+p[0],0)/scene.microphones, scene.mic_xyz.reduce((s,p)=>s+p[1],0)/scene.microphones];
-    const points = scene.mic_xyz.map(p => [p[0]-center[0],p[1]-center[1]]);
-    const radius = Math.max(.08,...points.flat().map(Math.abs)) * 1.25;
-    const scale = Math.min(w-94,h-66)/(radius*2), cx=w/2, cy=(h-12)/2;
-    const px=x=>cx+x*scale, py=y=>cy-y*scale;
-    const azimuth=scene.azimuth*Math.PI/180, length=radius*.88;
-    let svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" aria-label="${scene.microphones} microphone positions; target azimuth ${scene.azimuth.toFixed(1)} degrees"><defs><marker id="arrow-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#b96e22"/></marker></defs>`;
-    const tick=Math.ceil(radius*100/5)*5/100;
-    [-tick/2,0,tick/2].forEach(value => {
-      svg+=`<line x1="${px(-radius)}" x2="${px(radius)}" y1="${py(value)}" y2="${py(value)}" stroke="#e9eef2"/><line x1="${px(value)}" x2="${px(value)}" y1="${py(-radius)}" y2="${py(radius)}" stroke="#e9eef2"/><text x="${px(value)}" y="${py(-radius)+18}" text-anchor="middle" font-size="11" fill="#687686">${(value*100).toFixed(0)}</text><text x="${px(-radius)-9}" y="${py(value)+4}" text-anchor="end" font-size="11" fill="#687686">${(value*100).toFixed(0)}</text>`;
-    });
-    svg+=`<text x="${px(radius)+12}" y="${cy+4}" font-size="11" fill="#687686">x</text><text x="${cx+6}" y="${py(radius)-8}" font-size="11" fill="#687686">y</text><line x1="${cx}" y1="${cy}" x2="${px(Math.sin(azimuth)*length)}" y2="${py(Math.cos(azimuth)*length)}" stroke="#b96e22" stroke-width="2" marker-end="url(#arrow-tip)"/><circle cx="${cx}" cy="${cy}" r="2" fill="#b96e22"/>`;
-    points.forEach((p,i) => {
-      const selected=i===state.mic;
-      svg+=`<g data-mic="${i}" role="button" tabindex="0" aria-label="Select microphone ${i+1}" style="cursor:pointer"><title>Mic ${i+1}: x ${(p[0]*100).toFixed(1)}, y ${(p[1]*100).toFixed(1)} cm</title><circle cx="${px(p[0])}" cy="${py(p[1])}" r="11" fill="transparent"/><circle cx="${px(p[0])}" cy="${py(p[1])}" r="${selected?7:5}" fill="${selected?'#087f81':'#8dbad2'}" stroke="white" stroke-width="2"/>${selected?`<text x="${px(p[0])+11}" y="${py(p[1])-9}" font-size="12" font-weight="600" fill="#087f81">Mic ${i+1}</text>`:''}</g>`;
-    });
-    host.innerHTML=svg+'</svg>';
-    host.querySelectorAll('[data-mic]').forEach(el => {
-      const choose=()=>selectMic(Number(el.dataset.mic));
-      el.addEventListener('click',choose);
-      el.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();choose();}});
-    });
-  }
-
-  function drawCharts() {
-    const scene=current();
-    for(const kind of Object.keys(names)) {
-      const canvas=byId('chart-'+kind), box=canvas.getBoundingClientRect();
-      const w=box.width,h=box.height,dpr=window.devicePixelRatio||1;
-      if(!w||!h) continue;
-      canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
-      const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
-      const left=35,top=10,right=9,bottom=29,pw=w-left-right,ph=h-top-bottom;
-      ctx.clearRect(0,0,w,h);ctx.font='11px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
-      const track=channel().tracks[kind];
-      if(state.view==='waveform') {
-        ctx.strokeStyle='#e8edf1';ctx.lineWidth=1;
-        [0,.5,1].forEach(v=>{ctx.beginPath();ctx.moveTo(left,top+ph*v);ctx.lineTo(left+pw,top+ph*v);ctx.stroke();});
-        const amp=Math.max(scene.waveform_peak,1e-6);
-        const y=v=>top+ph/2-v/amp*ph/2;
-        ctx.fillStyle=colors[kind];ctx.beginPath();
-        track.envelope.forEach((pair,i)=>{const x=left+i/(track.envelope.length-1)*pw; i?ctx.lineTo(x,y(pair[1])):ctx.moveTo(x,y(pair[1]));});
-        for(let i=track.envelope.length-1;i>=0;i--)ctx.lineTo(left+i/(track.envelope.length-1)*pw,y(track.envelope[i][0]));
-        ctx.closePath();ctx.fill();ctx.fillStyle='#697786';ctx.textAlign='right';
-        ctx.fillText(amp.toFixed(2),left-5,top+4);ctx.fillText('0',left-5,top+ph/2+4);ctx.fillText('-'+amp.toFixed(2),left-5,top+ph+3);
-      } else {
-        let img=images.get(track.spectrogram);
-        if(!img){img=new Image();images.set(track.spectrogram,img);img.onload=drawCharts;img.src=track.spectrogram;}
-        if(img.complete&&img.naturalWidth)ctx.drawImage(img,left,top,pw,ph);
-        ctx.fillStyle='#697786';ctx.textAlign='right';
-        ctx.fillText('4 kHz',left-5,top+5);ctx.fillText('2',left-5,top+ph/2+4);ctx.fillText('0',left-5,top+ph+3);
+  function alignTime(row, time, source) {
+    row.time = Math.max(0, Math.min(time, row.scene.duration));
+    for (const player of row.players) {
+      if (player !== source && player.readyState >= 1 && Math.abs(player.currentTime - row.time) > .12) {
+        player.currentTime = row.time;
       }
-      ctx.fillStyle='#697786';ctx.textAlign='center';
-      [0,scene.duration/2,scene.duration].forEach(t=>ctx.fillText(t.toFixed(0),left+t/scene.duration*pw,top+ph+17));
-      ctx.textAlign='right';ctx.fillText('s',w-1,h-1);
-      const time=Number.isFinite(player.currentTime)?player.currentTime:0;
-      if(time>0){ctx.strokeStyle=state.view==='spectrogram'?'#ffffff':'#253649';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(left+time/scene.duration*pw,top);ctx.lineTo(left+time/scene.duration*pw,top+ph);ctx.stroke();}
-      canvas.setAttribute('aria-label',`${names[kind]} ${state.view} at microphone ${state.mic+1}, ${scene.duration} seconds`);
     }
+    drawWaveforms(row);
   }
 
-  function selectMic(index) {
-    const playing=!player.paused; state.mic=index; byId('mic-select').value=String(index);
-    byId('sisnr').textContent=channel().si_snri.toFixed(2)+' dB';
-    byId('sisnr-label').textContent=`SI-SNRi · Mic ${index+1}`;
-    drawGeometry();changeAudio(true,playing);drawCharts();
-    announce(`Microphone ${index+1} selected.`);
+  function drawWaveforms(row) {
+    const channel = row.scene.channels[row.mic];
+    row.element.querySelectorAll('.waveform').forEach(canvas => {
+      const {width: w, height: h} = canvas.getBoundingClientRect();
+      if (!w || !h) return;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      const kind = canvas.dataset.kind;
+      const envelope = channel.tracks[kind].envelope;
+      const compact = h < 50;
+      const bottom = compact ? 3 : 16, top = 5, plotHeight = h - bottom - top;
+      const amplitude = Math.max(row.scene.waveform_peak, 1e-6);
+      const x = i => 2 + i / (envelope.length - 1) * (w - 4);
+      const y = value => top + plotHeight / 2 - value / amplitude * plotHeight / 2;
+      ctx.strokeStyle = '#e5e9f0';
+      ctx.beginPath();ctx.moveTo(0, y(0));ctx.lineTo(w, y(0));ctx.stroke();
+      ctx.fillStyle = colors[kind];
+      ctx.beginPath();
+      envelope.forEach((pair, i) => i ? ctx.lineTo(x(i), y(pair[1])) : ctx.moveTo(x(i), y(pair[1])));
+      for (let i = envelope.length - 1; i >= 0; i--) ctx.lineTo(x(i), y(envelope[i][0]));
+      ctx.closePath();ctx.fill();
+      if (!compact) {
+        ctx.font = '10px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif';
+        ctx.fillStyle = '#7b8494';
+        ctx.textAlign = 'left';ctx.fillText('0', 1, h - 1);
+        ctx.textAlign = 'center';ctx.fillText('3', w / 2, h - 1);
+        ctx.textAlign = 'right';ctx.fillText('6 s', w - 1, h - 1);
+      }
+      if (row.time > 0) {
+        const cursor = row.time / row.scene.duration * w;
+        ctx.strokeStyle = '#25334e';ctx.lineWidth = 1;
+        ctx.beginPath();ctx.moveTo(cursor, top);ctx.lineTo(cursor, h - bottom);ctx.stroke();
+      }
+      canvas.setAttribute('aria-label', `${names[kind]} waveform, microphone ${row.mic + 1}, ${row.scene.duration} seconds; common scene amplitude scale`);
+    });
   }
 
-  function selectScene(index) {
-    state.scene=index;state.mic=0;const scene=current();
-    document.querySelectorAll('[data-scene]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.scene)===index)));
-    byId('scene-condition').textContent=conditions[scene.id];byId('scene-title').textContent=scene.title;
-    byId('scene-description').textContent=descriptions[scene.id];byId('mic-count').textContent=scene.microphones;
-    byId('azimuth').textContent=scene.azimuth.toFixed(1)+'°';byId('rt60').textContent=scene.rt60.toFixed(2)+' s';
-    byId('duration').textContent=scene.duration.toFixed(0)+' s / 8 kHz';
-    byId('download').href=scene.multichannel_download;
-    byId('mic-select').replaceChildren(...scene.channels.map((c,i)=>new Option('Mic '+c.index,i)));
-    byId('ipd').textContent=scene.delta_ipd.toFixed(3)+' rad';byId('itd').textContent=scene.delta_itd_us.toFixed(2)+' μs';
-    byId('ild').textContent=scene.delta_ild.toFixed(3)+' dB';
-    byId('sisnr').textContent=channel().si_snri.toFixed(2)+' dB';byId('sisnr-label').textContent='SI-SNRi · Mic 1';
-    byId('scene-source').textContent=`Saved scene: seg_6s/${scene.subset}/${scene.source_scene}`;
-    changeAudio(false,false);drawGeometry();drawCharts();announce(scene.title+' selected.');
+  function drawGeometry(row) {
+    const scene = row.scene, host = row.element.querySelector('.geometry-plot');
+    const center = [0, 1].map(axis => scene.mic_xyz.reduce((sum, p) => sum + p[axis], 0) / scene.microphones);
+    const points = scene.mic_xyz.map(p => [p[0] - center[0], p[1] - center[1]]);
+    const radius = Math.max(.08, ...points.flat().map(Math.abs)) * 1.3;
+    const scale = 68 / radius, px = x => 110 + x * scale, py = y => 86 - y * scale;
+    const a = scene.azimuth * Math.PI / 180, length = radius * .82;
+    let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 186" role="group" aria-label="${scene.microphones} microphones and target direction; XY projection in centimetres"><defs><marker id="arrow-${scene.id}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#bb7834"/></marker></defs>`;
+    const tick = Math.ceil(radius * 100 / 5) * 5 / 200;
+    [-tick, 0, tick].forEach(v => {
+      svg += `<path d="M${px(-radius)} ${py(v)}H${px(radius)}M${px(v)} ${py(-radius)}V${py(radius)}" fill="none" stroke="#e8ecf2"/><text x="${px(v)}" y="170" text-anchor="middle" font-size="10" fill="#737e90">${(v * 100).toFixed(0)}</text><text x="29" y="${py(v) + 3}" text-anchor="end" font-size="10" fill="#737e90">${(v * 100).toFixed(0)}</text>`;
+    });
+    svg += `<text x="193" y="90" font-size="10" fill="#737e90">x</text><text x="114" y="11" font-size="10" fill="#737e90">y</text><path d="M110 86L${px(Math.sin(a) * length)} ${py(Math.cos(a) * length)}" stroke="#bb7834" stroke-width="1.6" marker-end="url(#arrow-${scene.id})"/>`;
+    points.forEach((p, i) => {
+      const selected = row.mic === i;
+      svg += `<g data-mic="${i}" role="button" tabindex="0" aria-label="Select microphone ${i + 1}" aria-pressed="${selected}" style="cursor:pointer"><title>Mic ${i + 1}: x ${(p[0] * 100).toFixed(1)}, y ${(p[1] * 100).toFixed(1)} cm</title><circle cx="${px(p[0])}" cy="${py(p[1])}" r="10" fill="transparent"/><circle cx="${px(p[0])}" cy="${py(p[1])}" r="${selected ? 5.5 : 3.5}" fill="${selected ? '#2a50bd' : '#98acca'}" stroke="#fff" stroke-width="1"/>${selected ? `<text x="${px(p[0]) + 9}" y="${py(p[1]) - 8}" font-size="10" fill="#2a50bd" stroke="#fff" stroke-width="3" paint-order="stroke" pointer-events="none">Mic ${i + 1}</text>` : ''}</g>`;
+    });
+    host.innerHTML = svg + '</svg>';
+    host.querySelectorAll('[data-mic]').forEach(button => {
+      button.addEventListener('click', () => selectMic(row, Number(button.dataset.mic), true));
+      button.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();selectMic(row, Number(button.dataset.mic), true);
+        }
+      });
+    });
   }
 
-  data.scenes.forEach((scene,index)=>{
-    const button=document.createElement('button');button.type='button';button.dataset.scene=index;
-    const title=document.createElement('strong');title.textContent=scene.title;
-    const detail=document.createElement('span');detail.textContent=scene.microphones+' microphones · '+scene.duration+' seconds';
-    button.append(title,detail);button.addEventListener('click',()=>selectScene(index));byId('scene-tabs').append(button);
+  function updateDetails(row) {
+    if (!row.details.open) return;
+    drawGeometry(row);
+    const channel = row.scene.channels[row.mic];
+    row.element.querySelectorAll('.spectrum').forEach(figure => {
+      const kind = figure.dataset.kind, img = figure.querySelector('img');
+      img.src = channel.tracks[kind].spectrogram;
+      img.alt = `${names[kind]} spectrogram, ${labels[row.scene.id][0]}, microphone ${row.mic + 1}`;
+      figure.querySelector('button').setAttribute('aria-label', 'Enlarge ' + img.alt);
+    });
+    row.element.querySelector('[data-metric="sisnr"]').textContent = channel.si_snri.toFixed(2) + ' dB';
+    row.element.querySelector('[data-metric="sisnr-label"]').textContent = `SI-SNRi · Mic ${row.mic + 1}`;
+  }
+
+  function selectMic(row, index, restoreFocus = false) {
+    const resume = row.players.find(player => !player.paused);
+    const resumeKind = resume?.dataset.kind;
+    if (resume) row.time = resume.currentTime;
+    if (row.players.includes(activeAudio)) activeAudio = null;
+    const version = ++row.version;
+    row.mic = index;
+    row.element.querySelector('select').value = String(index);
+    const channel = row.scene.channels[index];
+    row.players.forEach(player => {
+      player.pause();
+      player.onloadedmetadata = () => {
+        if (version !== row.version) return;
+        player.currentTime = Math.min(row.time, Math.max(0, player.duration - .02));
+        if (player.dataset.kind === resumeKind) {
+          player.play().catch(() => { announcer.textContent = 'Press play to resume audio.'; });
+        }
+      };
+      player.src = channel.tracks[player.dataset.kind].audio;
+      player.setAttribute('aria-label', `${names[player.dataset.kind]}, ${labels[row.scene.id][0]}, microphone ${index + 1}`);
+      player.load();
+    });
+    updateDetails(row);drawWaveforms(row);
+    if (restoreFocus) row.element.querySelector(`[data-mic="${index}"]`)?.focus({preventScroll: true});
+    announcer.textContent = `${labels[row.scene.id][0]}: microphone ${index + 1} selected.`;
+  }
+
+  data.scenes.forEach((scene, sceneIndex) => {
+    const element = document.createElement('article');
+    element.className = 'scene';element.dataset.scene = scene.id;
+    element.setAttribute('aria-labelledby', `title-${scene.id}`);
+    element.innerHTML = `
+      <div class="scene-row comparison-grid">
+        <div class="scene-info">
+          <h3 id="title-${scene.id}"><span class="scene-number">0${sceneIndex + 1}</span>${labels[scene.id][0]}</h3>
+          <p class="condition">${labels[scene.id][1]}</p>
+          <label class="mic-picker" for="mic-${scene.id}">Listen at <select id="mic-${scene.id}" aria-label="Microphone for ${labels[scene.id][0]}">${scene.channels.map((c, i) => `<option value="${i}">Mic ${c.index}</option>`).join('')}</select></label>
+          <p class="direction">Target direction ${scene.azimuth.toFixed(1)}°</p>
+        </div>
+        ${kinds.map(kind => `<div class="track" data-kind="${kind}"><h4>${names[kind]}</h4><canvas class="waveform" data-kind="${kind}" role="img"></canvas><audio controls preload="metadata" data-kind="${kind}"></audio></div>`).join('')}
+      </div>
+      <details class="scene-details">
+        <summary>Array, spectrograms &amp; metrics</summary>
+        <div class="detail-body">
+          <div class="detail-grid comparison-grid">
+            <div class="geometry-panel"><h4>Microphone positions</h4><div class="geometry-plot"></div><p>XY projection · cm<br>Arrow: target direction<br>T₆₀ = ${scene.rt60.toFixed(2)} s<br>Click a mic to listen.</p></div>
+            ${kinds.map(kind => `<figure class="spectrum" data-kind="${kind}"><figcaption>${names[kind]} · 0–4 kHz</figcaption><button type="button"><img alt="" width="600" height="240"></button><div class="axis"><span>0</span><span>3</span><span>6 s</span></div></figure>`).join('')}
+          </div>
+          <p class="spectral-note">Shared −70 to 0 dB scale across signals and microphones. Click a spectrogram to enlarge.</p>
+          <dl class="scene-metrics"><div><dt data-metric="sisnr-label">SI-SNRi · Mic 1</dt><dd data-metric="sisnr"></dd></div><div><dt>ΔIPD · all mic pairs</dt><dd>${scene.delta_ipd.toFixed(3)} rad</dd></div><div><dt>ΔITD · all mic pairs</dt><dd>${scene.delta_itd_us.toFixed(2)} μs</dd></div><div><dt>ΔILD · all mic pairs</dt><dd>${scene.delta_ild.toFixed(3)} dB</dd></div></dl>
+          <div class="detail-bottom"><p>Single-example scores · Saved scene ${scene.source_scene} · 6 s</p><a href="${scene.multichannel_download}" download>Download all ${scene.microphones} output channels ↗</a></div>
+        </div>
+      </details>`;
+    document.getElementById('scene-list').append(element);
+    const row = {scene, element, mic: 0, time: 0, version: 0, players: [...element.querySelectorAll('audio')], details: element.querySelector('details')};
+    rows.push(row);
+    row.players.forEach(player => {
+      player.addEventListener('play', () => {
+        if (activeAudio !== player && row.players.includes(activeAudio)) row.time = activeAudio.currentTime;
+        const position = row.time >= scene.duration - .03 ? 0 : row.time;
+        document.querySelectorAll('audio').forEach(other => { if (other !== player) other.pause(); });
+        activeAudio = player;
+        if (Math.abs(player.currentTime - position) > .12) player.currentTime = position;
+        player.closest('.track').classList.add('is-playing');
+      });
+      player.addEventListener('pause', () => player.closest('.track').classList.remove('is-playing'));
+      player.addEventListener('timeupdate', () => { if (activeAudio === player && !player.seeking) alignTime(row, player.currentTime, player); });
+      player.addEventListener('seeking', () => {
+        if (player.readyState >= 1 && Math.abs(player.currentTime - row.time) > .15) alignTime(row, player.currentTime, player);
+      });
+      player.addEventListener('ended', () => { activeAudio = null;alignTime(row, 0); });
+      player.addEventListener('error', () => {
+        announcer.textContent = `${names[player.dataset.kind]} is unavailable. Please reload the page.`;
+      });
+    });
+    element.querySelector('select').addEventListener('change', event => selectMic(row, Number(event.target.value)));
+    row.details.addEventListener('toggle', () => updateDetails(row));
+    element.querySelectorAll('.spectrum button').forEach(button => button.addEventListener('click', () => {
+      const img = button.querySelector('img');
+      const preview = document.getElementById('dialog-image');
+      preview.src = img.src;preview.alt = img.alt;
+      document.getElementById('dialog-title').textContent = img.alt;
+      dialog.showModal();
+    }));
+    selectMic(row, 0);
   });
-  byId('mic-select').addEventListener('change',event=>selectMic(Number(event.target.value)));
-  document.querySelectorAll('[data-listen]').forEach(button=>button.addEventListener('click',()=>{
-    if(state.track===button.dataset.listen){player.paused?player.play().catch(()=>announce('Audio could not be played.')):player.pause();}
-    else{state.track=button.dataset.listen;changeAudio(true,true);}
-    updateTrackUI();
-  }));
-  document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>{
-    state.view=button.dataset.view;document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));
-    updateDisplayNote();drawCharts();
-  }));
-  function updateDisplayNote(){byId('display-note').textContent=state.view==='waveform'?'Waveforms share one amplitude scale across signals and microphones. Playback uses a shared scene gain.':'Spectrograms: 256-sample Hann STFT, 128-sample hop. Common −70 to 0 dB scale relative to the scene-wide maximum; dark = quieter, light = louder.';}
-  player.addEventListener('play',updateTrackUI);player.addEventListener('pause',updateTrackUI);
-  player.addEventListener('timeupdate',drawCharts);player.addEventListener('error',()=>announce('Audio unavailable. Check that the audio folder is included.'));
-  let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{drawGeometry();drawCharts();},80);});
-  byId('load-status').hidden=true;byId('demo-content').hidden=false;updateDisplayNote();selectScene(0);
+
+  document.getElementById('close-dialog').addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);resizeTimer = setTimeout(() => rows.forEach(drawWaveforms), 80);
+  });
+  status.hidden = true;
+  announcer.textContent = '';
 })();

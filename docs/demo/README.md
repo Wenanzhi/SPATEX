@@ -4,6 +4,12 @@ Open `index.html` in a browser, or serve the repository with
 `python -m http.server 8000` and visit `http://localhost:8000/docs/demo/`.
 The page has no external JavaScript, font or chart dependencies.
 
+Three array examples are displayed together. Each row has its own microphone
+selector and native audio controls for the mixture, SPATEX and target reference.
+Only one track plays at a time; switching tracks within a row keeps the playback
+position. Expand a row to inspect microphone coordinates, enlarge spectrograms,
+view single-scene metrics or download every output channel.
+
 ## Reproduce the assets
 
 From the repository root, using the single `requirements.txt` environment:

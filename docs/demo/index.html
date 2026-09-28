@@ -3,70 +3,71 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Listen to real SPATEX target speech extraction examples across microphone arrays, and compare microphone-wise waveforms and spectrograms.">
-  <title>SPATEX · Audio and spatial demo</title>
+  <meta name="description" content="SPATEX: array-flexible target speech extraction. Compare real multichannel audio examples from the released epoch-85 model.">
+  <meta name="theme-color" content="#ffffff">
+  <title>SPATEX — Target Speech Extraction</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232a50bd'/%3E%3Cpath d='M15 28v8m8-17v26m9-33v40m9-33v26m8-17v8' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="style.css">
   <script defer src="data.js"></script>
   <script defer src="app.js"></script>
 </head>
 <body>
-<a class="skip" href="#examples">Skip to audio examples</a>
-<main>
-  <header class="paper-header">
-    <p class="eyebrow">Submitted to ICASSP 2027</p>
+<a class="skip-link" href="#examples">Skip to audio examples</a>
+<nav class="site-nav wrap" aria-label="Page navigation">
+  <a class="wordmark" href="#top" aria-label="SPATEX home"><svg viewBox="0 0 28 24" aria-hidden="true"><path d="M2 10v4m6-9v14m6-17v20m6-17v14m6-9v4"/></svg>SPATEX</a>
+  <div><a href="#examples">Listen</a><a href="#method">Method</a><a href="https://github.com/Wenanzhi/SPATEX">GitHub <span aria-hidden="true">↗</span></a></div>
+</nav>
+<main id="top">
+  <header class="paper-header wrap">
+    <p class="venue">Submitted to ICASSP 2027</p>
     <h1>SPATEX</h1>
-    <p class="paper-title">Array-Flexible Multichannel-to-Multichannel<br class="desktop-break"> Target Speech Extraction Using Direction Clue</p>
-    <p class="authors">Wen Wen*, Changda Chen*, Yu Xi, Haoyu Li, Qiang Zhou, Guanyu Chen,<br class="desktop-break"> Xiaoyu Gu, Bohan Li, Shuai Wang, and Kai Yu†</p>
-    <p class="author-note">* Equal contribution · † Corresponding author</p>
-    <nav aria-label="Project links">
-      <a href="https://github.com/Wenanzhi/SPATEX">Code</a>
-      <a href="#examples">Audio examples</a>
-      <a href="https://github.com/Wenanzhi/SPATEX/raw/refs/heads/main/checkpoints/spatex_variable.pt">Pretrained model</a>
-    </nav>
-    <p class="intro">Given microphone coordinates and a target direction, SPATEX extracts the target speech image at every microphone. Explore how a single model reconstructs speech across three different array configurations.</p>
+    <p class="paper-title">Array-Flexible Multichannel-to-Multichannel<br class="wide-break"> Target Speech Extraction Using Direction Clue</p>
+    <p class="authors">Wen Wen<sup>*</sup>, Changda Chen<sup>*</sup>, Yu Xi, Haoyu Li, Qiang Zhou, Guanyu Chen,<br class="wide-break"> Xiaoyu Gu, Bohan Li, Shuai Wang, Kai Yu<sup>†</sup></p>
+    <p class="author-note"><sup>*</sup> Equal contribution &nbsp; <sup>†</sup> Corresponding author</p>
+    <div class="paper-links">
+      <a class="button primary" href="#examples"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6Z"/></svg>Listen to examples</a>
+      <a class="button" href="https://github.com/Wenanzhi/SPATEX"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 5-5 5 5 5m8-10 5 5-5 5M12 2 8 18"/></svg>Code &amp; checkpoint</a>
+    </div>
   </header>
 
-  <section id="examples" aria-labelledby="examples-title">
-    <div class="section-heading"><div><p class="eyebrow">Listen &amp; explore</p><h2 id="examples-title">One model, different arrays</h2></div><span class="model-tag">Main checkpoint · epoch 85</span></div>
-    <p class="section-description">Select an array, then a microphone. Compare the input mixture, SPATEX output and reverberant target reference.</p>
-    <div id="scene-tabs" class="scene-tabs" role="group" aria-label="Array example"></div>
-    <p id="load-status" role="status">Loading examples…</p>
-    <noscript><p>Enable JavaScript to select microphones and compare audio.</p></noscript>
-    <div id="demo-content" hidden>
-      <div class="scene-layout">
-        <figure class="geometry-figure">
-          <div class="plot-heading"><h3>Microphone geometry</h3><span>XY projection · cm</span></div>
-          <div id="geometry-plot" role="img" aria-label="Microphone positions and target direction"></div>
-          <figcaption><span class="legend-dot"></span> Microphone <span class="legend-line"></span> Target DOA clue</figcaption>
-        </figure>
-        <div class="scene-summary">
-          <p class="condition" id="scene-condition"></p>
-          <h3 id="scene-title"></h3>
-          <p class="scene-description" id="scene-description"></p>
-          <dl class="scene-facts"><div><dt>Microphones</dt><dd id="mic-count"></dd></div><div><dt>Target azimuth</dt><dd id="azimuth"></dd></div><div><dt>Reverberation T₆₀</dt><dd id="rt60"></dd></div><div><dt>Duration / sample rate</dt><dd id="duration"></dd></div></dl>
-          <p class="data-note">The arrow shows direction, not source distance. Click a microphone in the plot or use the selector below.</p>
-          <a id="download" class="download-link" download>Download all SPATEX output channels ↗</a>
-        </div>
-      </div>
-
-      <div class="audio-heading"><h3>Microphone-wise reconstruction</h3><div class="audio-controls"><label for="mic-select">Listen at <select id="mic-select"></select></label><div class="view-tabs" role="group" aria-label="Signal visualization"><button type="button" data-view="waveform" aria-pressed="true">Waveforms</button><button type="button" data-view="spectrogram" aria-pressed="false">Spectrograms</button></div></div></div>
-      <div class="track-grid">
-        <article class="track" data-track="mixture"><div class="track-heading"><span class="track-number">01</span><h4>Input mixture</h4><button type="button" data-listen="mixture" aria-pressed="false">Listen</button></div><p>Target + two interfering speakers</p><canvas id="chart-mixture" role="img" aria-label="Input mixture waveform"></canvas></article>
-        <article class="track selected" data-track="estimate"><div class="track-heading"><span class="track-number">02</span><h4>SPATEX</h4><button type="button" data-listen="estimate" aria-pressed="true">Selected</button></div><p>Reconstructed target speech</p><canvas id="chart-estimate" role="img" aria-label="SPATEX output waveform"></canvas></article>
-        <article class="track" data-track="reference"><div class="track-heading"><span class="track-number">03</span><h4>Target reference</h4><button type="button" data-listen="reference" aria-pressed="false">Listen</button></div><p>Ground-truth reverberant target</p><canvas id="chart-reference" role="img" aria-label="Target reference waveform"></canvas></article>
-      </div>
-      <div class="playback-row"><div><span class="eyebrow">Now selected</span><p id="now-playing"></p></div><audio id="player" controls preload="metadata" aria-label="Selected audio track"></audio><p class="playback-hint">Switch tracks at the same playback time.</p></div>
-      <p id="display-note" class="data-note"></p>
-      <div class="metric-strip" aria-label="Metrics for this example"><div><span id="sisnr-label">SI-SNRi · selected mic</span><strong id="sisnr"></strong></div><div><span>ΔIPD · all mic pairs</span><strong id="ipd"></strong></div><div><span>ΔITD · all mic pairs</span><strong id="itd"></strong></div><div><span>ΔILD · all mic pairs</span><strong id="ild"></strong></div></div>
-      <p class="data-note">Metrics describe this individual six-second example. They are not averages from the paper’s two-second benchmark.</p>
-      <p id="scene-source" class="sample-source"></p>
-    </div>
+  <section id="examples" class="examples wrap" aria-labelledby="examples-title">
+    <div class="section-heading"><h2 id="examples-title">Audio examples</h2><span>One model · epoch 85</span></div>
+    <p class="section-intro">A target direction in, a target speech image at every microphone out.<br>Choose a microphone to compare the same excerpt. Playback stays aligned within each row.</p>
+    <div class="comparison-head comparison-grid" aria-hidden="true"><span>Array / microphone</span><span>Mixture<small>Target + two interferers</small></span><span class="ours-label">SPATEX<small>Extracted target</small></span><span>Target reference<small>Reverberant ground truth</small></span></div>
+    <p id="load-status" role="status">Loading audio examples…</p>
+    <noscript><p>Enable JavaScript to compare microphone channels, or <a href="audio/fixed/spatex_multichannel.wav">download the four-channel SPATEX output</a>.</p></noscript>
+    <div id="scene-list"></div>
+    <p class="listening-note">6-second excerpts · 8 kHz · Shared gain across signals and microphones in each scene.</p>
   </section>
 
-  <section class="method" aria-labelledby="method-title"><h2 id="method-title">How SPATEX works</h2><p>Geometry-aware channel exchange and shared temporal attention coordinate the microphone streams. A shared decoder reconstructs the target image at each microphone, with IPD and coherence supervision preserving interchannel relationships.</p><img src="../figures/spatex_architecture.png" alt="SPATEX architecture: shared encoding, DOA conditioning, geometry-aware channel exchange, temporal co-attention, and microphone-wise reconstruction." loading="lazy"></section>
-  <section class="notes"><h2>About these examples</h2><p>All outputs were generated offline using the released variable-array checkpoint, trained with 2–8 microphones. Examples are the first saved scenes matching each geometry and microphone count; no filtering by output score was applied. Playback uses one shared attenuation gain per scene across all signals and channels. Spectrograms also share a common magnitude scale. The downloadable multichannel outputs retain the original floating-point amplitudes.</p><p>Speech originates from the LibriSpeech test split, with simulated reverberation. The browser plays precomputed outputs; it does not run the model. <a href="README.md">Generation details and provenance</a>.</p></section>
-  <footer><span>SPATEX · Submitted to ICASSP 2027</span><a href="https://github.com/Wenanzhi/SPATEX">GitHub repository ↗</a></footer>
+  <section id="method" class="method wrap" aria-labelledby="method-title">
+    <div class="section-heading"><h2 id="method-title">The idea</h2><a href="https://github.com/Wenanzhi/SPATEX#train">Reproduce SPATEX <span aria-hidden="true">↗</span></a></div>
+    <p>SPATEX uses microphone coordinates and a target direction to extract speech across different arrays. Geometry-aware channel exchange and shared temporal attention connect microphone streams, while IPD and coherence losses preserve their spatial relationships. The same model reconstructs a separate target image for every microphone.</p>
+    <figure><img src="../figures/spatex_architecture.png" width="2000" height="452" alt="SPATEX architecture: shared encoding, geometry-aware channel exchange, direction-conditioned temporal co-attention, and microphone-wise reconstruction." loading="lazy"><figcaption>Shared temporal attention, microphone-specific reconstruction.</figcaption></figure>
+  </section>
+
+  <section class="about wrap" aria-label="Example details and citation">
+    <details>
+      <summary>About these examples</summary>
+      <div class="prose"><p>All three examples use the released variable-array epoch-85 checkpoint, trained with 2–8 microphones. Fixed and matched examples use linear and planar layouts; the unmatched example uses a random layout with 1 cm microphone-position perturbations. Speech comes from LibriSpeech test-clean with simulated room responses.</p><p>Examples are the first saved scenes matching each geometry and microphone count, without selection by output score. Playback uses one common attenuation gain per scene. Waveforms and spectrograms share scales across signals and microphones. Downloads retain the original floating-point multichannel output.</p><p>Metrics in the expanded rows describe individual six-second examples, rather than the paper’s two-second benchmark averages. <a href="https://github.com/Wenanzhi/SPATEX/blob/main/docs/demo/README.md">Generation details</a> · <a href="manifest.json">Sample provenance</a></p></div>
+    </details>
+    <details>
+      <summary>Citation</summary>
+      <pre><code>@unpublished{wen2026spatex,
+  title  = {{SPATEX}: Array-Flexible Multichannel-to-Multichannel
+            Target Speech Extraction Using Direction Clue},
+  author = {Wen, Wen and Chen, Changda and Xi, Yu and Li, Haoyu
+            and Zhou, Qiang and Chen, Guanyu and Gu, Xiaoyu
+            and Li, Bohan and Wang, Shuai and Yu, Kai},
+  year   = {2026},
+  note   = {Submitted to ICASSP 2027},
+  url    = {https://github.com/Wenanzhi/SPATEX}
+}</code></pre>
+    </details>
+  </section>
 </main>
-<div id="announcer" class="sr-only" aria-live="polite"></div>
+<footer class="wrap"><span>SPATEX · ICASSP 2027 submission</span><a href="https://github.com/Wenanzhi/SPATEX">Code, checkpoint &amp; reproduction <span aria-hidden="true">↗</span></a></footer>
+<dialog id="spectrogram-dialog" aria-labelledby="dialog-title"><div class="dialog-heading"><h2 id="dialog-title">Spectrogram</h2><button type="button" id="close-dialog" aria-label="Close spectrogram">×</button></div><img id="dialog-image" alt=""><p>0–4 kHz vertically · 0–6 seconds horizontally · Shared −70 to 0 dB scale</p></dialog>
+<div id="announcer" class="sr-only" role="status" aria-live="polite"></div>
 </body>
 </html>

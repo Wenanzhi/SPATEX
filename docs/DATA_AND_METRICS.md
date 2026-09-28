@@ -89,4 +89,39 @@ signal/spatial evaluation under perturbed cues.
 
 Use explicit checkpoint paths for the released weights. The `best` selector
 requires validation history from a full training checkpoint. See the
-[README](../README.md) for complete commands.
+[README](../README.md) for installation, training and basic evaluation.
+
+After preparing the released checkpoint as shown in the README, evaluate DOA
+preservation with:
+
+```bash
+python -m src.training.eval_doa_preservation spatex_variable \
+  --project_root . --testset data/Testset/seg_2s/3_var_match \
+  --output_root outputs/doa --label_cache outputs/labels_match.npz \
+  --build_label_cache --pretrain_path 85.pt \
+  --estimator srp_phat --device cpu --num_samples 500
+```
+
+For the fixed-array cue-error experiment, use `1_4ch_fixed`, a separate label
+cache and `--offsets -15 -10 -5 0 5 10 15`.
+
+The bundled test-set generator covers the three conditions listed above with
+2–8 microphones; it does not generate the separate 9–10 microphone subsets in
+the paper.
+
+## Other training and evaluation options
+
+For eight GPUs with a global batch size of eight:
+
+```bash
+torchrun --standalone --nproc_per_node=8 -m src.training.train \
+  experiments/spatex_train --use_cuda --find_unused_parameters
+```
+
+The `configs/` directory also contains fixed-four-microphone, independent
+attention and spatial-loss ablation recipes. Only the main variable-array
+epoch-85 checkpoint is distributed.
+
+Add `--detailed --detailed_out_root outputs/per_scene` to the README's
+`run_testsets` command to export per-scene metrics. Omit `--use_cuda --gpu_ids 0`
+for CPU evaluation. For inference, use `--device cuda:0` to select a GPU.
